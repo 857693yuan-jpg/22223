@@ -1,8 +1,265 @@
-﻿<ul>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/projectile-deflection-enchantment">Projectile Deflection Enchantment (Fabric/Forge/NeoForge/Quilt) (by lullaby6)</a></li>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/better-advancements">Better Advancements (by way2muchnoise)</a></li>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/xaeros-minimap">Xaero's Minimap (by xaero96)</a></li>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/balm">Balm (by BlayTheNinth)</a></li>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/waystones">Waystones (by BlayTheNinth)</a></li>
-<li><a href="https://www.curseforge.com/minecraft/mc-mods/mouse-tweaks">Mouse Tweaks (by YaLTeR)</a></li>
-</ul>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>活動抽獎系統</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#141414,#1f1f1f);
+color:white;
+text-align:center;
+}
+
+.panel{
+background:#2a2a2a;
+padding:20px;
+margin:20px auto;
+width:380px;
+border-radius:12px;
+box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+button{
+padding:10px 20px;
+margin:5px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.loginBtn{background:#2196F3;}
+.drawBtn{background:#4CAF50;}
+.clearBtn{background:#f44336;}
+
+input{
+padding:8px;
+margin:5px;
+}
+
+#winner{
+font-size:35px;
+margin-top:20px;
+color:#00ff9d;
+}
+
+ul{
+text-align:left;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🎉 活動抽獎</h1>
+
+<div class="panel" id="guestPanel">
+
+<p>歡迎參加抽獎活動</p>
+
+<button class="loginBtn" onclick="showLogin()">管理員登入</button>
+
+</div>
+
+
+<div class="panel" id="loginPanel" style="display:none">
+
+<h3>管理員登入</h3>
+
+<input id="codeInput" placeholder="輸入登入碼">
+
+<br>
+
+<button onclick="login()">登入</button>
+
+<p id="msg"></p>
+
+</div>
+
+
+<div class="panel" id="adminPanel" style="display:none">
+
+<h3>管理員後台</h3>
+
+<input id="nameInput" placeholder="新增抽獎名字">
+
+<button onclick="addName()">新增</button>
+
+<button class="clearBtn" onclick="clearNames()">清空名單</button>
+
+<br>
+
+<button class="drawBtn" onclick="draw()">開始抽獎</button>
+
+<button onclick="logout()">登出</button>
+
+<h2 id="winner"></h2>
+
+<h3>抽獎名單</h3>
+<ul id="nameList"></ul>
+
+<h3>抽獎紀錄</h3>
+<ul id="history"></ul>
+
+</div>
+
+
+<script>
+
+let ADMIN_CODE="abc123"   // 只有你知道的登入碼
+
+let names=JSON.parse(localStorage.getItem("names"))||[]
+let history=JSON.parse(localStorage.getItem("history"))||[]
+
+function showLogin(){
+document.getElementById("loginPanel").style.display="block"
+}
+
+function login(){
+
+let input=document.getElementById("codeInput").value
+
+if(input===ADMIN_CODE){
+
+document.getElementById("guestPanel").style.display="none"
+document.getElementById("loginPanel").style.display="none"
+document.getElementById("adminPanel").style.display="block"
+
+render()
+
+}else{
+
+document.getElementById("msg").innerText="登入碼錯誤"
+
+}
+
+}
+
+function logout(){
+
+document.getElementById("adminPanel").style.display="none"
+document.getElementById("guestPanel").style.display="block"
+
+}
+
+function addName(){
+
+let name=document.getElementById("nameInput").value
+
+if(name==="")return
+
+names.push(name)
+
+document.getElementById("nameInput").value=""
+
+save()
+
+render()
+
+}
+
+function clearNames(){
+
+names=[]
+
+save()
+
+render()
+
+}
+
+function draw(){
+
+if(names.length===0){
+
+alert("沒有名單")
+
+return
+
+}
+
+let times=30
+
+let interval=setInterval(()=>{
+
+let rand=names[Math.floor(Math.random()*names.length)]
+
+document.getElementById("winner").innerText=rand
+
+times--
+
+if(times<=0){
+
+clearInterval(interval)
+
+let winner=document.getElementById("winner").innerText
+
+history.unshift("🎉 "+winner)
+
+save()
+
+render()
+
+}
+
+},80)
+
+}
+
+function save(){
+
+localStorage.setItem("names",JSON.stringify(names))
+localStorage.setItem("history",JSON.stringify(history))
+
+}
+
+function render(){
+
+let list=document.getElementById("nameList")
+
+list.innerHTML=""
+
+names.forEach((n,i)=>{
+
+let li=document.createElement("li")
+
+li.innerText=n
+
+li.onclick=function(){
+
+names.splice(i,1)
+
+save()
+
+render()
+
+}
+
+list.appendChild(li)
+
+})
+
+
+let h=document.getElementById("history")
+
+h.innerHTML=""
+
+history.forEach(i=>{
+
+let li=document.createElement("li")
+
+li.innerText=i
+
+h.appendChild(li)
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
