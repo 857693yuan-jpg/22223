@@ -2,262 +2,183 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>活動抽獎系統</title>
+<title>R幣抽獎活動</title>
 
 <style>
-
 body{
 font-family:Arial;
-background:linear-gradient(135deg,#141414,#1f1f1f);
+background:#121212;
 color:white;
 text-align:center;
 }
 
 .panel{
-background:#2a2a2a;
+background:#2b2b2b;
 padding:20px;
 margin:20px auto;
-width:380px;
-border-radius:12px;
-box-shadow:0 0 15px rgba(0,0,0,0.5);
+width:400px;
+border-radius:10px;
 }
 
 button{
 padding:10px 20px;
 margin:5px;
 border:none;
-border-radius:6px;
+border-radius:5px;
 cursor:pointer;
 }
 
-.loginBtn{background:#2196F3;}
-.drawBtn{background:#4CAF50;}
-.clearBtn{background:#f44336;}
-
-input{
-padding:8px;
-margin:5px;
-}
+.join{background:#4CAF50;}
+.login{background:#2196F3;}
+.draw{background:#ff9800;}
+.reset{background:#f44336;}
 
 #winner{
-font-size:35px;
-margin-top:20px;
+font-size:30px;
 color:#00ff9d;
 }
-
-ul{
-text-align:left;
-}
-
 </style>
 </head>
 
 <body>
 
-<h1>🎉 活動抽獎</h1>
+<h1>🎁 R幣抽獎活動</h1>
 
-<div class="panel" id="guestPanel">
+<div class="panel">
+<h3>參加抽獎</h3>
 
-<p>歡迎參加抽獎活動</p>
-
-<button class="loginBtn" onclick="showLogin()">管理員登入</button>
-
-</div>
-
-
-<div class="panel" id="loginPanel" style="display:none">
-
-<h3>管理員登入</h3>
-
-<input id="codeInput" placeholder="輸入登入碼">
-
+<input id="playerName" placeholder="輸入 Roblox 名字">
 <br>
 
-<button onclick="login()">登入</button>
+<button class="join" onclick="join()">加入抽獎</button>
 
-<p id="msg"></p>
-
+<p>目前參加人數：<span id="count">0</span></p>
 </div>
 
+<div class="panel">
+<button class="login" onclick="adminLogin()">管理員登入</button>
+</div>
 
 <div class="panel" id="adminPanel" style="display:none">
+<h3>管理員面板</h3>
 
-<h3>管理員後台</h3>
-
-<input id="nameInput" placeholder="新增抽獎名字">
-
-<button onclick="addName()">新增</button>
-
-<button class="clearBtn" onclick="clearNames()">清空名單</button>
-
-<br>
-
-<button class="drawBtn" onclick="draw()">開始抽獎</button>
-
-<button onclick="logout()">登出</button>
+<button class="draw" onclick="draw()">開始抽獎</button>
+<button class="reset" onclick="resetGame()">重新一輪</button>
 
 <h2 id="winner"></h2>
 
-<h3>抽獎名單</h3>
-<ul id="nameList"></ul>
-
-<h3>抽獎紀錄</h3>
-<ul id="history"></ul>
-
+<h3>參加名單</h3>
+<ul id="list"></ul>
 </div>
-
 
 <script>
 
-let ADMIN_CODE="abc123"   // 只有你知道的登入碼
+// 🔐 管理員登入碼（自己改）
+let ADMIN_CODE="addfffch369"
 
-let names=JSON.parse(localStorage.getItem("names"))||[]
-let history=JSON.parse(localStorage.getItem("history"))||[]
+// 👥 玩家資料
+let players=JSON.parse(localStorage.getItem("players"))||[]
 
-function showLogin(){
-document.getElementById("loginPanel").style.display="block"
-}
-
-function login(){
-
-let input=document.getElementById("codeInput").value
-
-if(input===ADMIN_CODE){
-
-document.getElementById("guestPanel").style.display="none"
-document.getElementById("loginPanel").style.display="none"
-document.getElementById("adminPanel").style.display="block"
-
-render()
-
-}else{
-
-document.getElementById("msg").innerText="登入碼錯誤"
-
-}
-
-}
-
-function logout(){
-
-document.getElementById("adminPanel").style.display="none"
-document.getElementById("guestPanel").style.display="block"
-
-}
-
-function addName(){
-
-let name=document.getElementById("nameInput").value
-
-if(name==="")return
-
-names.push(name)
-
-document.getElementById("nameInput").value=""
-
-save()
-
-render()
-
-}
-
-function clearNames(){
-
-names=[]
-
-save()
-
-render()
-
-}
-
-function draw(){
-
-if(names.length===0){
-
-alert("沒有名單")
-
-return
-
-}
-
-let times=30
-
-let interval=setInterval(()=>{
-
-let rand=names[Math.floor(Math.random()*names.length)]
-
-document.getElementById("winner").innerText=rand
-
-times--
-
-if(times<=0){
-
-clearInterval(interval)
-
-let winner=document.getElementById("winner").innerText
-
-history.unshift("🎉 "+winner)
-
-save()
-
-render()
-
-}
-
-},80)
-
-}
-
+// 💾 儲存
 function save(){
-
-localStorage.setItem("names",JSON.stringify(names))
-localStorage.setItem("history",JSON.stringify(history))
-
+localStorage.setItem("players",JSON.stringify(players))
 }
 
-function render(){
+// 🔄 更新畫面
+function update(){
+document.getElementById("count").innerText=players.length
 
-let list=document.getElementById("nameList")
+let list=document.getElementById("list")
+if(!list)return
 
 list.innerHTML=""
 
-names.forEach((n,i)=>{
-
+players.forEach(p=>{
 let li=document.createElement("li")
+li.innerText=p
+list.appendChild(li)
+})
+}
 
-li.innerText=n
+// 🎮 加入抽獎（防作弊）
+function join(){
 
-li.onclick=function(){
+let name=document.getElementById("playerName").value.trim()
 
-names.splice(i,1)
+if(name===""){
+alert("請輸入名字")
+return
+}
+
+// ❌ 同裝置限制
+if(localStorage.getItem("joined")){
+alert("這台裝置已經參加過了！")
+return
+}
+
+// ❌ 名字重複
+if(players.includes(name)){
+alert("這個名字已經參加過了！")
+return
+}
+
+players.push(name)
+
+// 🔒 記錄已參加
+localStorage.setItem("joined","yes")
+
+document.getElementById("playerName").value=""
 
 save()
+update()
 
-render()
+alert("參加成功！🎉")
+}
+
+// 🔑 管理員登入
+function adminLogin(){
+let code=prompt("輸入管理員登入碼")
+
+if(code===ADMIN_CODE){
+document.getElementById("adminPanel").style.display="block"
+update()
+}else{
+alert("登入失敗")
+}
+}
+
+// 🎲 抽獎
+function draw(){
+if(players.length===0){
+alert("沒有人參加")
+return
+}
+
+let rand=players[Math.floor(Math.random()*players.length)]
+
+document.getElementById("winner").innerText="🎉 中獎者："+rand
+}
+
+// 🔥 重新一輪
+function resetGame(){
+
+if(confirm("確定要重置所有資料嗎？")){
+
+localStorage.clear()
+
+players=[]
+
+document.getElementById("winner").innerText=""
+
+update()
+
+alert("已重新開始一輪！")
 
 }
 
-list.appendChild(li)
-
-})
-
-
-let h=document.getElementById("history")
-
-h.innerHTML=""
-
-history.forEach(i=>{
-
-let li=document.createElement("li")
-
-li.innerText=i
-
-h.appendChild(li)
-
-})
-
 }
+
+update()
 
 </script>
 
